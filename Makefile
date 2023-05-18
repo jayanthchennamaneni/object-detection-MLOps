@@ -1,25 +1,22 @@
 VENV := venv
 PYTHON := $(VENV)/bin/python
 SRC := src
-dataset = $(SRC)/dataset.py
-train = $(SRC)/train.py
-test = $(SRC)/eval.py
+DOCKER_IMAGE := object-detection-api
+TAG := $(shell date +%Y%m%d%H%M%S)
 
-all: load-data train test 
+all: load-data train test docker-build
 
 load-data:
-	$(PYTHON) $(SRC)/$(dataset)
+	$(PYTHON) $(SRC)/dataset.py
 
 train:
 	# Run the training script
-	$(PYTHON) $(SRC)/$(train)
+	$(PYTHON) $(SRC)/train.py
 
 test:
 	# Run the testing script
-	$(PYTHON) $(SRC)/$(test)
+	$(PYTHON) $(SRC)/eval.py
 
-
-
-
-
-
+docker-build:
+	# Build the Docker image with a unique tag
+	docker build -t $(DOCKER_IMAGE):$(TAG) .
