@@ -11,17 +11,17 @@ import matplotlib.pyplot as plt
 import itertools
 
 # Dataset paths
-data_root = './VOCdevkit/VOC2007'
-train_set = 'train'
-val_set = 'val'
+data_root = './VOCdevkit/VOC2007'  # Root directory of the VOC dataset
+train_set = 'train'  # Name of the train dataset
+val_set = 'val'  # Name of the validation dataset
 
 # Define a transformation to apply to images
 data_transform = transforms.Compose([
-    transforms.Resize((300, 300)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225]),
+    transforms.Resize((300, 300)),  # Resize images to (300, 300)
+    transforms.ToTensor(),  # Convert images to tensors
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize image tensors
 ])
+
 # Define a mapping from class names to integers
 class_name_to_label = {
     'aeroplane': 0,
@@ -45,6 +45,7 @@ class_name_to_label = {
     'train': 18,
     'tvmonitor': 19,
 }
+
 # Define a collate function for data loading
 def collate_fn(batch):
     images = []
@@ -76,25 +77,23 @@ def collate_fn(batch):
 
     return torch.stack(images, 0), (bboxes, labels)
 
+
 # Load train and validation datasets
 train_dataset = VOCDetection(root=data_root, year='2007', image_set=train_set, transform=data_transform, download=False)
-val_dataset = VOCDetection(root=data_root, year='2007', image_set=val_set, transform=data_transform, download=False)
-
-train_subset_size = 12
+train_subset_size = 12  # Size of the train subset
 train_subset = Subset(train_dataset, indices=range(train_subset_size))
-
-val_subset_size = 12
-val_subset = Subset(train_dataset, indices=range(val_subset_size))
-
-# Create data loaders
 train_loader = DataLoader(train_subset, batch_size=4, shuffle=True, num_workers=0, collate_fn=collate_fn)
+    
+val_dataset = VOCDetection(root=data_root, year='2007', image_set=val_set, transform=data_transform, download=False)
+val_subset_size = 12  # Size of the validation subset
+val_subset = Subset(val_dataset, indices=range(val_subset_size))
 val_loader = DataLoader(val_subset, batch_size=4, shuffle=False, num_workers=0, collate_fn=collate_fn)
 
 
 if __name__ == "__main__":
-
-    print(f"Number of batches: {len(train_loader)}")
-    print(f"Number of batches: {len(val_loader)}")
+    # Print the number of batches in the train_loader and val_loader
+    print(f"Number of batches in train_loader: {len(train_loader)}")
+    print(f"Number of batches in val_loader: {len(val_loader)}")
 
     # Get the first batch from the train_loader
     images, annotations = next(iter(train_loader))

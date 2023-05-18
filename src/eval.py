@@ -13,6 +13,15 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 
 def pascal_voc_to_coco(pascal_annotations):
+    """
+    Convert Pascal VOC annotations to COCO annotations format.
+
+    Args:
+        pascal_annotations (list): List of Pascal VOC annotations.
+
+    Returns:
+        dict: COCO annotations in dictionary format.
+    """
     coco_annotations = {
         'categories': [],
         'images': [],
@@ -26,7 +35,7 @@ def pascal_voc_to_coco(pascal_annotations):
     image_id = 0
     annotation_id = 0
     for image, targets in pascal_annotations:
-        image_width, image_height = image.shape[1:3]
+        image_width, image_height = image.size
         image_info = {
             'file_name': str(image_id) + '.jpg',
             'id': image_id,
@@ -55,7 +64,18 @@ def pascal_voc_to_coco(pascal_annotations):
 
     return coco_annotations
 
+
 def evaluate(model, val_loader):
+    """
+    Evaluate the model on the validation set using COCO evaluation metrics.
+
+    Args:
+        model: The trained object detection model.
+        val_loader: DataLoader for the validation set.
+
+    Returns:
+        list: COCO evaluation statistics.
+    """
     model.eval()
     all_annotations = []
     all_detections = []
@@ -107,7 +127,6 @@ def evaluate(model, val_loader):
     coco_eval.summarize()
 
     return coco_eval.stats
-
 
 
 if __name__ == "__main__":

@@ -4,12 +4,36 @@ import io
 import json
 from PIL import Image
 from torchvision import transforms
-from train import model
+import torch.optim as optim
+from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
+from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
+
+def get_faster_rcnn_voc_model(num_classes=21):
+    """
+    Get a Faster R-CNN model pre-trained on COCO dataset and replace the box predictor for VOC dataset.
+
+    Args:
+        num_classes (int): Number of classes in the VOC dataset.
+
+    Returns:
+        model: Faster R-CNN model with the box predictor replaced.
+    """
+
+    model = fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
+
+    # Replace the box predictor to change the number of classes
+    in_features = model.roi_heads.box_predictor.cls_score.in_features
+    model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
+
+    return model
+
+# Model and optimizer
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+model = get_faster_rcnn_voc_model()
 
 app = Flask(__name__)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-model.load_state_dict(torch.load("models/object_detection.pt"))
+model.load_state_dict(torch.load("/app/models/object_detection.pt"))
 model.to(device)
 model.eval()
 
@@ -24,13 +48,12 @@ transform = transforms.Compose([
 def welcome():
     return "Welcome to the Object Detection API!"
 
-
 @app.route('/detect', methods=['POST'])
 def detect_objects():
-    if 'image' not in request.files:
+    if 'file' not in request.files:
         return jsonify({"error": "Image not provided"}), 400
 
-    image = Image.open(request.files['image'].stream).convert('RGB')
+    image = Image.open(request.files['file'].stream).convert('RGB')
     image_tensor = transform(image).unsqueeze(0).to(device)
 
     with torch.no_grad():

@@ -1,1 +1,27 @@
+# Compiled python files
+__pycache__/
+*.py[cod]
+
+# data
 /VOCdevkit
+
+# Environments
+/venv
+
+# Ignore specific directories
+__pycache__/
+*.py[cod]
+*.so
+
+# Ignore specific files
+*.log
+*.csv
+*.json
+
+# Ignore git history
+.git/
+
+# Ignore data files
+data/
+*.csv
+*.json

@@ -1,3 +1,27 @@
-/venv
+# Compiled python files
+__pycache__/
+*.py[cod]
+
+# data and models
 /VOCdevkit
 /models
+
+# Environments
+/venv
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# data files
+*.csv
+
+# logs
+*.log

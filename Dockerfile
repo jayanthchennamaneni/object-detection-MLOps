@@ -1,6 +1,8 @@
 # Use a minimal Python image
 FROM python:3.9-slim
 
+RUN apt-get update && apt-get install -y python3-dev build-essential
+
 # Set working directory
 WORKDIR /app
 
@@ -8,6 +10,7 @@ WORKDIR /app
 COPY requirements.txt .
 
 # Install dependencies
+RUN python -m pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy the application files
@@ -17,4 +20,4 @@ COPY . .
 EXPOSE 8000
 
 # Start the application with gunicorn
-CMD ["gunicorn", "--bind", "0.0.0.0:8000", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:8000", "main:app"]
