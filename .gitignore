@@ -1,2 +1,3 @@
 /venv
-/data
+/VOCdevkit
+/mlruns

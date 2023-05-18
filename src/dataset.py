@@ -1,120 +1,116 @@
 import os
 import torch
-import torchvision.transforms as transforms
-from torchvision.transforms import functional as F
-from torch.utils.data import Dataset, DataLoader
-from PIL import Image
-import xml.etree.ElementTree as ET
-import random
+import torchvision
+from torchvision import transforms
+from torchvision.datasets import VOCDetection
+from torch.utils.data import Subset, DataLoader
 
-class ReducedVOC(Dataset):
-    
-    # Add the class_to_label dictionary as a class variable
-    class_to_label = {'person': 1, 'bus': 2, 'car': 3, 'bird': 4, 'motorcycle': 5}
+import numpy as np
+import matplotlib.pyplot as plt
 
-    def __init__(self, root_dir, transform=None, split="train", val_fraction=0.2):
-        self.root_dir = root_dir
-        self.transform = transform
-        self.split = split
-        self.val_fraction = val_fraction
+import itertools
 
-        self.annotations_dir = os.path.join(self.root_dir, 'reduced_Annotations')
-        self.images_dir = os.path.join(self.root_dir, 'JPEGImages')
+# Dataset paths
+data_root = './VOCdevkit/VOC2007'
+train_set = 'train'
+val_set = 'val'
 
-        self.image_files = sorted(os.listdir(self.images_dir))
-        self.annotation_files = sorted(os.listdir(self.annotations_dir))
+# Define a transformation to apply to images
+data_transform = transforms.Compose([
+    transforms.Resize((300, 300)),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406],
+                         std=[0.229, 0.224, 0.225]),
+])
+# Define a mapping from class names to integers
+class_name_to_label = {
+    'aeroplane': 0,
+    'bicycle': 1,
+    'bird': 2,
+    'boat': 3,
+    'bottle': 4,
+    'bus': 5,
+    'car': 6,
+    'cat': 7,
+    'chair': 8,
+    'cow': 9,
+    'diningtable': 10,
+    'dog': 11,
+    'horse': 12,
+    'motorbike': 13,
+    'person': 14,
+    'pottedplant': 15,
+    'sheep': 16,
+    'sofa': 17,
+    'train': 18,
+    'tvmonitor': 19,
+}
+# Define a collate function for data loading
+def collate_fn(batch):
+    images = []
+    bboxes = []
+    labels = []
 
-        # Shuffle and split the dataset
-        combined = list(zip(self.image_files, self.annotation_files))
-        random.seed(42)
-        random.shuffle(combined)
-        split_idx = int(len(combined) * (1 - self.val_fraction))
-
-        if self.split == "train":
-            combined = combined[:split_idx]
-        elif self.split == "val":
-            combined = combined[split_idx:]
-
-        self.image_files, self.annotation_files = zip(*combined)
-
-    def __len__(self):
-        return len(self.image_files)
-
-    def __getitem__(self, idx):
-        # Load image
-        img_path = os.path.join(self.images_dir, self.image_files[idx])
-        img = Image.open(img_path).convert('RGB')
-
-        # Load and parse annotation XML file
-        annotation_path = os.path.join(self.annotations_dir, self.annotation_files[idx])
-        tree = ET.parse(annotation_path)
-        root = tree.getroot()
-
+    for sample in batch:
+        images.append(sample[0])
+        
+        # Process annotations
         boxes = []
-        labels = []
-        for obj in root.findall('object'):
-            # Extract bounding box coordinates
-            bbox = obj.find('bndbox')
-            xmin = int(bbox.find('xmin').text)
-            ymin = int(bbox.find('ymin').text)
-            xmax = int(bbox.find('xmax').text)
-            ymax = int(bbox.find('ymax').text)
+        class_labels = []
+        objects = sample[1]['annotation']['object']
+        if not isinstance(objects, list):
+            objects = [objects]
+            
+        for obj in objects:
+            xmin = float(obj['bndbox']['xmin'])
+            ymin = float(obj['bndbox']['ymin'])
+            xmax = float(obj['bndbox']['xmax'])
+            ymax = float(obj['bndbox']['ymax'])
             boxes.append([xmin, ymin, xmax, ymax])
+            
+            label = class_name_to_label[obj['name']]
+            class_labels.append(label)
+        
+        bboxes.append(torch.tensor(boxes, dtype=torch.float32))
+        labels.append(torch.tensor(class_labels, dtype=torch.long))
 
-            # Convert class name to integer label
-            class_name = obj.find('name').text
-            label = self.class_to_label[class_name]
-            labels.append(label)
+    return torch.stack(images, 0), (bboxes, labels)
 
-        boxes = torch.tensor(boxes, dtype=torch.float32)
-        labels = torch.tensor(labels, dtype=torch.int64)
+# Load train and validation datasets
+train_dataset = VOCDetection(root=data_root, year='2007', image_set=train_set, transform=data_transform, download=False)
+val_dataset = VOCDetection(root=data_root, year='2007', image_set=val_set, transform=data_transform, download=False)
 
-        # Apply image and bounding box transformations, if any
-        if self.transform:
-            img, boxes = self.transform(img, boxes)
+train_subset_size = 12
+train_subset = Subset(train_dataset, indices=range(train_subset_size))
 
-        return img, boxes, labels
+val_subset_size = 12
+val_subset = Subset(train_dataset, indices=range(val_subset_size))
 
-# Custom transform class for image and bounding box
-class ResizeAndToTensor:
-    def __init__(self, size):
-        self.size = size
-
-    def __call__(self, img, boxes):
-        # Calculate the scaling factors for width and height
-        width, height = img.size
-        new_width, new_height = self.size
-        width_scale = new_width / width
-        height_scale = new_height / height
-
-        # Resize the image
-        img = F.resize(img, self.size)
-        img = F.to_tensor(img)
-
-        # Resize the bounding boxes
-        boxes[:, 0] *= width_scale
-        boxes[:, 1] *= height_scale
-        boxes[:, 2] *= width_scale
-        boxes[:, 3] *= height_scale
-
-        return img, boxes
+# Create data loaders
+train_loader = DataLoader(train_subset, batch_size=4, shuffle=True, num_workers=0, collate_fn=collate_fn)
+val_loader = DataLoader(val_subset, batch_size=4, shuffle=False, num_workers=0, collate_fn=collate_fn)
 
 
-# Define train and validation transformations
-train_transforms = transforms.Compose([
-    ResizeAndToTensor(size=(300, 300)),
-])
+if __name__ == "__main__":
 
-val_transforms = transforms.Compose([
-    ResizeAndToTensor(size=(300, 300)),
-])
+    print(f"Number of batches: {len(train_loader)}")
+    print(f"Number of batches: {len(val_loader)}")
 
-# Create train and validation dataset instances with the defined transformations
-train_dataset = ReducedVOC(root_dir='./data/VOCdevkit/VOC2007', transform=train_transforms, split="train")
-val_dataset = ReducedVOC(root_dir='./data/VOCdevkit/VOC2007', transform=val_transforms, split="val")
+    # Get the first batch from the train_loader
+    images, annotations = next(iter(train_loader))
 
-# Create train and validation data loaders
-train_loader = DataLoader(train_dataset, batch_size=16, shuffle=True, num_workers=4, collate_fn=None)
-val_loader = DataLoader(val_dataset, batch_size=16, shuffle=False, num_workers=4, collate_fn=None)
+    # Convert images from tensors to numpy arrays
+    images = images.numpy()
 
+    # Plot the images
+    fig = plt.figure(figsize=(10, 10))
+    for i in range(len(images)):
+        ax = fig.add_subplot(4, 1, i+1)
+        image = images[i].transpose((1, 2, 0))  # Transpose image tensor shape (C, H, W) to (H, W, C)
+        image = image * [0.229, 0.224, 0.225] + [0.485, 0.456, 0.406]  # Undo the normalization
+        image = np.clip(image, 0, 1)  # Clip pixel values between 0 and 1
+        ax.imshow(image)
+        ax.axis('off')
 
+    plt.tight_layout()
+    plt.show()
