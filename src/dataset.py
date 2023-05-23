@@ -1,14 +1,10 @@
-import os
-import torch
-import torchvision
-from torchvision import transforms
-from torchvision.datasets import VOCDetection
-from torch.utils.data import Subset, DataLoader
-
 import numpy as np
 import matplotlib.pyplot as plt
 
-import itertools
+import torch
+from torchvision import transforms
+from torchvision.datasets import VOCDetection
+from torch.utils.data import Subset, DataLoader
 
 # Dataset paths
 data_root = './VOCdevkit/VOC2007'  # Root directory of the VOC dataset
@@ -17,9 +13,9 @@ val_set = 'val'  # Name of the validation dataset
 
 # Define a transformation to apply to images
 data_transform = transforms.Compose([
-    transforms.Resize((300, 300)),  # Resize images to (300, 300)
-    transforms.ToTensor(),  # Convert images to tensors
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),  # Normalize image tensors
+    transforms.Resize((300, 300)),  
+    transforms.ToTensor(),  
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), 
 ])
 
 # Define a mapping from class names to integers
@@ -105,9 +101,9 @@ if __name__ == "__main__":
     fig = plt.figure(figsize=(10, 10))
     for i in range(len(images)):
         ax = fig.add_subplot(4, 1, i+1)
-        image = images[i].transpose((1, 2, 0))  # Transpose image tensor shape (C, H, W) to (H, W, C)
-        image = image * [0.229, 0.224, 0.225] + [0.485, 0.456, 0.406]  # Undo the normalization
-        image = np.clip(image, 0, 1)  # Clip pixel values between 0 and 1
+        image = images[i].transpose((1, 2, 0))  
+        image = image * [0.229, 0.224, 0.225] + [0.485, 0.456, 0.406]  
+        image = np.clip(image, 0, 1)  
         ax.imshow(image)
         ax.axis('off')
 

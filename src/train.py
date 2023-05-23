@@ -5,11 +5,11 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from src.dataset import train_loader, class_name_to_label
 
 # Parameters
-num_epochs = 1  # Number of training epochs
-learning_rate = 0.01  # Learning rate for optimization
+num_epochs = 50 
+learning_rate = 0.01  
 
 # Model and optimizer
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  # Device for training
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")  
 
 def get_faster_rcnn_voc_model(num_classes=21):
     """
@@ -30,14 +30,14 @@ def get_faster_rcnn_voc_model(num_classes=21):
 
     return model
 
-model = get_faster_rcnn_voc_model()  # Get the Faster R-CNN VOC model
-model.to(device)  # Move the model to the device (GPU if available)
-optimizer = optim.Adam(model.parameters(), lr=learning_rate)  # Adam optimizer
+model = get_faster_rcnn_voc_model()  
+model.to(device)  
+optimizer = optim.Adam(model.parameters(), lr=learning_rate)  
 
 if __name__ == "__main__":
     # Training loop
     for epoch in range(num_epochs):
-        model.train()  # Set the model to training mode
+        model.train()  
         running_loss = 0
         for i, (images, (bboxes, labels)) in enumerate(train_loader):
             images = images.to(device)
@@ -48,12 +48,12 @@ if __name__ == "__main__":
                 target["labels"] = labels[j].to(device)
                 targets.append(target)
 
-            optimizer.zero_grad()  # Clear the gradients
-            loss_dict = model(images, targets)  # Forward pass and compute the losses
-            losses = sum(loss for loss in loss_dict.values())  # Compute the total loss
+            optimizer.zero_grad()  
+            loss_dict = model(images, targets)  
+            losses = sum(loss for loss in loss_dict.values())  
             running_loss += losses.item()
-            losses.backward()  # Backpropagation
-            optimizer.step()  # Update model parameters
+            losses.backward()  
+            optimizer.step()  
 
             if i % 1 == 0:
                 print(f"Epoch: {epoch}, Step: {i}, Loss: {losses.item()}")
@@ -61,4 +61,4 @@ if __name__ == "__main__":
         avg_loss = running_loss / len(train_loader)
         print(f"Epoch: {epoch}, Average Loss: {avg_loss}")
 
-    torch.save(model.state_dict(), "models/object_detection.pt")  # Save the trained model weights
+    torch.save(model.state_dict(), "models/object_detection.pt")  
