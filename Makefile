@@ -4,7 +4,9 @@ SRC := src
 DOCKER_IMAGE := object-detection-api
 TAG := $(shell date +%Y%m%d%H%M%S)
 
-all: load-data train test docker-build
+install:
+	pip install --upgrade pip
+	pip install -r requirements.txt
 
 load-data:
 	$(PYTHON) $(SRC)/dataset.py
@@ -20,3 +22,5 @@ test:
 docker-build:
 	# Build the Docker image with a unique tag
 	docker build -t $(DOCKER_IMAGE):$(TAG) .
+
+all: install load-data train test docker-build
