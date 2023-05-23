@@ -20,9 +20,7 @@ jobs:
         python-version: 3.8
     
     - name: Create and activate virtual environment
-      run: |
-        python -m venv venv
-        source venv/bin/activate
+      run: make environment
         
     - name: Install dependencies
       run: make install

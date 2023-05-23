@@ -4,6 +4,10 @@ SRC := src
 DOCKER_IMAGE := object-detection-api
 TAG := $(shell date +%Y%m%d%H%M%S)
 
+environment:
+	$(PYTHON) -m venv venv
+    source venv/bin/activate
+
 install:
 	pip install --upgrade pip
 	pip install -r requirements.txt
