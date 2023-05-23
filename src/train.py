@@ -5,7 +5,7 @@ from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from src.dataset import train_loader, class_name_to_label
 
 # Parameters
-num_epochs = 10  # Number of training epochs
+num_epochs = 1  # Number of training epochs
 learning_rate = 0.01  # Learning rate for optimization
 
 # Model and optimizer
