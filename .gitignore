@@ -23,5 +23,7 @@ ipython_config.py
 # data files
 *.csv
 
+
+.DS_Store
 # logs
 *.log
